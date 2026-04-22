@@ -1,0 +1,119 @@
+// Legal Appointments System - Database Schema
+//
+// Design decisions documented in docs/adr/003-timezone-strategy.md:
+// - All timestamps stored in UTC (TIMESTAMPTZ)
+// - IANA timezones on entities (not offsets - handles DST correctly)
+// - Timezone "snapshots" on appointments preserve booking-time semantics
+// - Composite index on (lawyerId, startsAtUtc, endsAtUtc) for conflict detection
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Countries - where a lawyer is licensed to practice
+// ============================================================
+model Country {
+  id              Int      @id @default(autoincrement())
+  code            String   @unique @db.VarChar(2)       // ISO 3166-1 alpha-2
+  name            String
+  defaultTimezone String                                 // IANA, e.g. "America/Argentina/Buenos_Aires"
+
+  lawyers         Lawyer[]
+
+  @@map("countries")
+}
+
+// ============================================================
+// Lawyers - professionals booking appointments with clients
+// ============================================================
+model Lawyer {
+  id          String    @id @default(uuid()) @db.Uuid
+  fullName    String
+  email       String    @unique
+  timezone    String                                    // IANA: "America/Argentina/Buenos_Aires"
+  specialties String[]                                   // Postgres text[] — simple, no join table
+
+  countryId   Int
+  country     Country   @relation(fields: [countryId], references: [id], onDelete: Restrict)
+
+  appointments Appointment[]
+
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([email])
+  @@map("lawyers")
+}
+
+// ============================================================
+// Clients - end users booking appointments with lawyers
+// ============================================================
+model Client {
+  id          String    @id @default(uuid()) @db.Uuid
+  fullName    String
+  email       String    @unique
+  phone       String?
+  timezone    String                                    // IANA — client's own timezone
+
+  appointments Appointment[]
+
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([email])
+  @@map("clients")
+}
+
+// ============================================================
+// Appointments - the core business entity
+// ============================================================
+model Appointment {
+  id                      String            @id @default(uuid()) @db.Uuid
+
+  lawyerId                String            @db.Uuid
+  lawyer                  Lawyer            @relation(fields: [lawyerId], references: [id], onDelete: Restrict)
+
+  clientId                String            @db.Uuid
+  client                  Client            @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
+  type                    AppointmentType
+  status                  AppointmentStatus @default(SCHEDULED)
+
+  // UTC storage - the canonical times used for scheduling, comparison, and conflict detection
+  startsAtUtc             DateTime          @db.Timestamptz(6)
+  endsAtUtc               DateTime          @db.Timestamptz(6)
+
+  // Timezone snapshots: preserve booking-time context even if entities' timezones later change
+  lawyerTimezoneSnapshot  String
+  clientTimezoneSnapshot  String
+
+  notes                   String?
+
+  createdAt               DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt               DateTime          @updatedAt @db.Timestamptz(6)
+
+  // Composite index supporting the conflict-detection query:
+  // "given a lawyer, find appointments overlapping a time window"
+  @@index([lawyerId, startsAtUtc, endsAtUtc])
+  @@index([clientId])
+  @@index([status])
+  @@map("appointments")
+}
+
+enum AppointmentType {
+  IN_PERSON
+  VIDEO
+  PHONE
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
