@@ -108,7 +108,7 @@ describe('LawyerService', () => {
         makeLawyer({ id: 'l1', fullName: 'Alice Adams' }),
       ]);
       const result = await service.list();
-      expect(result.map((l) => l.id)).toEqual(['l1', 'l2']);
+      expect(result.map((l: LawyerWithCountry) => l.id)).toEqual(['l1', 'l2']);
     });
 
     it('returns empty array when no lawyers', async () => {

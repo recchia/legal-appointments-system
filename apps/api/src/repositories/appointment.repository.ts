@@ -1,29 +1,65 @@
-import type { PrismaClient, Appointment } from '@prisma/client';
+import type { PrismaClient, Appointment, AppointmentType, AppointmentStatus } from '@prisma/client';
 
-/**
- * Data-access boundary for appointments. Wraps Prisma so the service
- * layer never imports the ORM directly — this preserves testability
- * (services can be unit-tested with a fake repository) and lets us
- * swap Prisma without touching business logic.
- *
- * All timestamp parameters and return values are UTC Date instants.
- */
+export interface AppointmentWithRelations extends Appointment {
+  lawyer: { id: string; fullName: string; timezone: string };
+  client: { id: string; fullName: string; timezone: string };
+}
+
+export interface CreateAppointmentData {
+  lawyerId: string;
+  clientId: string;
+  type: AppointmentType;
+  status: AppointmentStatus;
+  startsAtUtc: Date;
+  endsAtUtc: Date;
+  lawyerTimezoneSnapshot: string;
+  clientTimezoneSnapshot: string;
+  notes?: string;
+}
+
+export interface UpdateAppointmentData {
+  status?: AppointmentStatus;
+  startsAtUtc?: Date;
+  endsAtUtc?: Date;
+  notes?: string;
+}
+
 export class AppointmentRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
+  async findById(id: string): Promise<AppointmentWithRelations | null> {
+    return this.prisma.appointment.findUnique({
+      where: { id },
+      include: {
+        lawyer: { select: { id: true, fullName: true, timezone: true } },
+        client: { select: { id: true, fullName: true, timezone: true } },
+      },
+    });
+  }
+
   /**
-   * Returns appointments for a lawyer that could potentially overlap
-   * the given UTC window. "Could potentially" here means:
-   *   - The appointment starts before the window ends
-   *   - AND the appointment ends after the window starts
-   *
-   * Cancelled and NO_SHOW appointments are excluded — those time slots
-   * are considered free.
-   *
-   * Optionally excludes a specific appointment ID — used during
-   * reschedule, so the appointment being updated doesn't conflict
-   * with its own existing database row.
+   * Calendar view: appointments for a lawyer within a UTC window.
+   * Returns them ordered chronologically.
    */
+  async findForLawyerInWindow(args: {
+    lawyerId: string;
+    windowStartUtc: Date;
+    windowEndUtc: Date;
+  }): Promise<AppointmentWithRelations[]> {
+    return this.prisma.appointment.findMany({
+      where: {
+        lawyerId: args.lawyerId,
+        startsAtUtc: { lt: args.windowEndUtc },
+        endsAtUtc: { gt: args.windowStartUtc },
+      },
+      include: {
+        lawyer: { select: { id: true, fullName: true, timezone: true } },
+        client: { select: { id: true, fullName: true, timezone: true } },
+      },
+      orderBy: { startsAtUtc: 'asc' },
+    });
+  }
+
   async findOverlappingForLawyer(args: {
     lawyerId: string;
     windowStartUtc: Date;
@@ -41,6 +77,30 @@ export class AppointmentRepository {
           : {}),
       },
       orderBy: { startsAtUtc: 'asc' },
+    });
+  }
+
+  async create(data: CreateAppointmentData): Promise<AppointmentWithRelations> {
+    return this.prisma.appointment.create({
+      data,
+      include: {
+        lawyer: { select: { id: true, fullName: true, timezone: true } },
+        client: { select: { id: true, fullName: true, timezone: true } },
+      },
+    });
+  }
+
+  async update(
+    id: string,
+    data: UpdateAppointmentData,
+  ): Promise<AppointmentWithRelations> {
+    return this.prisma.appointment.update({
+      where: { id },
+      data,
+      include: {
+        lawyer: { select: { id: true, fullName: true, timezone: true } },
+        client: { select: { id: true, fullName: true, timezone: true } },
+      },
     });
   }
 }

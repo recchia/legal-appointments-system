@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AppointmentType, AppointmentStatus } from '@legal-appointments/shared';
 
 // IANA timezone validator - basic check, we'll refine in TimezoneService
 const IANA_TIMEZONE_REGEX = /^[A-Z][A-Za-z_]+(?:\/[A-Z][A-Za-z_]+)+$/;
@@ -11,9 +12,10 @@ export const createAppointmentSchema = z
   .object({
     lawyerId: z.string().uuid({ message: 'lawyerId must be a valid UUID' }),
     clientId: z.string().uuid({ message: 'clientId must be a valid UUID' }),
-    type: z.enum(['IN_PERSON', 'VIDEO', 'PHONE'], {
-      errorMap: () => ({ message: 'type must be IN_PERSON, VIDEO, or PHONE' }),
-    }),
+    type: z.enum(
+      Object.values(AppointmentType) as [string, ...string[]],
+      { errorMap: () => ({ message: 'type must be IN_PERSON, VIDEO, or PHONE' }) }
+    ),
     startsAtUtc: isoDateTime,
     endsAtUtc: isoDateTime,
     notes: z.string().max(1000).optional(),
@@ -29,7 +31,9 @@ export const updateAppointmentSchema = z
   .object({
     startsAtUtc: isoDateTime.optional(),
     endsAtUtc: isoDateTime.optional(),
-    status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']).optional(),
+    status: z.enum(
+      Object.values(AppointmentStatus) as [string, ...string[]]
+    ).optional(),
     notes: z.string().max(1000).optional(),
   })
   .refine(

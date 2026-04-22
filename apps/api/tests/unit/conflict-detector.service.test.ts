@@ -246,7 +246,7 @@ describe('ConflictDetectorService', () => {
       expect(result.hasConflict).toBe(true);
       expect(result.conflicting).toHaveLength(2);
       // Fake repo doesn't guarantee order, but real Prisma query does via orderBy
-      const ids = result.conflicting.map((a) => a.id).sort();
+      const ids = result.conflicting.map((a: Appointment) => a.id).sort();
       expect(ids).toEqual(['apt-1', 'apt-2']);
     });
   });

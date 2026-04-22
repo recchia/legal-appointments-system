@@ -50,7 +50,7 @@ export class TimezoneService {
    * For a user picking "April 22 at 12pm in Buenos Aires", pass the
    * wall-clock time and the target zone to get the canonical UTC.
    */
-  localToUtc(localWallClock: Date, timezone: string): Date {
+  localToUtc(localWallClock: Date | string, timezone: string): Date {
     this.assertValid(timezone);
     return fromZonedTime(localWallClock, timezone);
   }
