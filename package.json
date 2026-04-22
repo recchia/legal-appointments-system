@@ -4,7 +4,7 @@
   "private": true,
   "description": "Multi-timezone legal appointment scheduling system.",
   "scripts": {
-    "dev": "pnpm --parallel --filter ./apps/* run dev",
+    "dev": "pnpm -r --parallel --stream --filter \"./apps/*\" dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",
