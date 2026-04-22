@@ -1,32 +1,40 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
+import { LawyersPage } from './pages/LawyersPage';
+import { LawyerCalendarPage } from './pages/LawyerCalendarPage';
+import { NewAppointmentPage } from './pages/NewAppointmentPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 30_000, refetchOnWindowFocus: false },
+    queries: {
+      staleTime: 30_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
   },
 });
 
-function Home() {
+function TopBar() {
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Legal Appointments</h1>
-      <p>Multi-timezone appointment scheduling for legal practices.</p>
-      <nav style={{ display: 'flex', gap: 16, marginTop: 16 }}>
-        <Link to="/lawyers">Lawyers</Link>
-        <Link to="/appointments/new">New Appointment</Link>
+    <header className="topbar">
+      <div className="topbar__logo">
+        legal<span>.</span>appointments
+      </div>
+      <nav className="topbar__nav">
+        <NavLink
+          to="/lawyers"
+          className={({ isActive }) => `topbar__link${isActive ? ' active' : ''}`}
+        >
+          Lawyers
+        </NavLink>
+        <NavLink
+          to="/appointments/new"
+          className={({ isActive }) => `topbar__link${isActive ? ' active' : ''}`}
+        >
+          New appointment
+        </NavLink>
       </nav>
-    </div>
-  );
-}
-
-function Placeholder({ title }: { title: string }) {
-  return (
-    <div style={{ padding: 24 }}>
-      <h1>{title}</h1>
-      <p>Coming soon.</p>
-      <Link to="/">← Home</Link>
-    </div>
+    </header>
   );
 }
 
@@ -34,12 +42,17 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/lawyers" element={<Placeholder title="Lawyers" />} />
-          <Route path="/lawyers/:id/calendar" element={<Placeholder title="Lawyer Calendar" />} />
-          <Route path="/appointments/new" element={<Placeholder title="New Appointment" />} />
-        </Routes>
+        <div className="layout">
+          <TopBar />
+          <main>
+            <Routes>
+              <Route path="/" element={<LawyersPage />} />
+              <Route path="/lawyers" element={<LawyersPage />} />
+              <Route path="/lawyers/:id/calendar" element={<LawyerCalendarPage />} />
+              <Route path="/appointments/new" element={<NewAppointmentPage />} />
+            </Routes>
+          </main>
+        </div>
       </BrowserRouter>
     </QueryClientProvider>
   );
