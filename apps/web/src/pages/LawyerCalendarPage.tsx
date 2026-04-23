@@ -38,7 +38,7 @@ function typeLabel(type: string) {
   return map[type] ?? type;
 }
 
-function AppointmentCard({ apt }: { apt: Appointment & { startsAtLocal?: { lawyer: string }; endsAtLocal?: { lawyer: string } } }) {
+function AppointmentCard({ apt }: { apt: Appointment & { startsAtLocal?: { lawyer: string; client: string }; endsAtLocal?: { lawyer: string; client: string } } }) {
   const start = apt.startsAtLocal?.lawyer ?? apt.startsAtUtc;
   const end = apt.endsAtLocal?.lawyer ?? apt.endsAtUtc;
 
