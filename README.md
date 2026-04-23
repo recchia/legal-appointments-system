@@ -29,10 +29,10 @@ That's it. Three services start automatically:
 Migrations run automatically on API startup. To seed demo data (3 lawyers across Argentina, Mexico, and Spain):
 
 ```bash
-cd apps/api
-DATABASE_URL="postgresql://legal:legal@localhost:5432/legal_appointments?schema=public" \
-  pnpm exec prisma db seed
+docker compose exec api pnpm exec prisma db seed
 ```
+
+No local tooling required — runs inside the already-started API container.
 
 ---
 
