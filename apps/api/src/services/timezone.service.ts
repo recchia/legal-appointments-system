@@ -19,7 +19,6 @@ export class TimezoneService {
   isValid(timezone: string): boolean {
     if (!timezone || typeof timezone !== 'string') return false;
     try {
-      // eslint-disable-next-line no-new
       new Intl.DateTimeFormat('en-US', { timeZone: timezone });
       return true;
     } catch {

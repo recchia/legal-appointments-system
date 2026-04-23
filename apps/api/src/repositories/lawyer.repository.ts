@@ -1,4 +1,4 @@
-import type { PrismaClient, Lawyer, Prisma } from '@prisma/client';
+import type { PrismaClient, Lawyer } from '@prisma/client';
 
 export interface LawyerWithCountry extends Lawyer {
   country: {
