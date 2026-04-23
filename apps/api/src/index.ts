@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
+import { authMiddleware } from './middleware/auth';
 import { router } from './routes/index';
 import { errorHandler } from './middleware/error-handler';
 import { prisma } from './container';
@@ -14,6 +15,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(pinoHttp());
+app.use(authMiddleware);
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {

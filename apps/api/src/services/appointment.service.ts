@@ -31,12 +31,12 @@ export interface CalendarQuery {
 /**
  * Orchestrates appointment lifecycle.
  *
- * Business rules enforced here:
- * 1. Lawyer must exist
+ * Business rules are enforced here:
+1. Lawyers *  must exist
  * 2. Client must exist
  * 3. Appointment cannot be in the past (relative to Clock.now())
  * 4. Lawyer has no conflicting appointment in the window
- * 5. Timezone snapshots are captured at booking time from entity state
+ * 5. Timezone snapshots are captured at booking time from the entity state
  */
 export class AppointmentService {
   constructor(
