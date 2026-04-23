@@ -7,26 +7,25 @@ import {
 import type { AppointmentService } from '../services/appointment.service';
 import type { TimezoneService } from '../services/timezone.service';
 
+function param(req: Request, key: string): string {
+  const val = req.params[key];
+  return Array.isArray(val) ? val[0] : val;
+}
+
 export class AppointmentController {
   constructor(
     private readonly appointmentService: AppointmentService,
     private readonly timezoneService: TimezoneService,
   ) {}
 
-  /**
-   * GET /api/lawyers/:id/calendar?from=ISO&to=ISO
-   * Returns appointments for a lawyer within a window,
-   * each enriched with local time representations.
-   */
   getCalendar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const query = calendarQuerySchema.parse(req.query);
       const appointments = await this.appointmentService.getCalendar(
-        req.params.id,
+        param(req, 'id'),
         query,
       );
 
-      // Enrich each appointment with local time strings for display
       const enriched = appointments.map((apt) => ({
         ...apt,
         startsAtLocal: {
@@ -59,7 +58,7 @@ export class AppointmentController {
 
   getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const appointment = await this.appointmentService.getById(req.params.id);
+      const appointment = await this.appointmentService.getById(param(req, 'id'));
       res.json(appointment);
     } catch (err) {
       next(err);
@@ -79,7 +78,7 @@ export class AppointmentController {
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const data = updateAppointmentSchema.parse(req.body);
-      const appointment = await this.appointmentService.update(req.params.id, data);
+      const appointment = await this.appointmentService.update(param(req, 'id'), data);
       res.json(appointment);
     } catch (err) {
       next(err);
