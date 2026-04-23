@@ -6,9 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   api:
-    name: API — typecheck + test
+    name: API — lint + typecheck + test
     runs-on: ubuntu-latest
 
     services:
@@ -41,16 +44,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: pnpm --filter api exec prisma generate
+        env:
+          DATABASE_URL: postgresql://legal:legal@localhost:5432/legal_appointments_test
+
       - name: Lint (api)
         run: pnpm --filter api run lint
 
       - name: Typecheck (api)
         run: pnpm --filter api run typecheck
-
-      - name: Generate Prisma client
-        run: pnpm --filter api exec prisma generate
-        env:
-          DATABASE_URL: postgresql://legal:legal@localhost:5432/legal_appointments_test
 
       - name: Run migrations
         run: pnpm --filter api exec prisma migrate deploy
